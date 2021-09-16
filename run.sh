@@ -15,4 +15,5 @@ python3 -m torch.distributed.run \
 	--seed 2021 \
 	--master_ip $MASTER_IP \
 	--master_port $MASTER_PORT \
+	--logging \
 	~/data/ILSVRC2012 
