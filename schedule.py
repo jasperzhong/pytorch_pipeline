@@ -35,6 +35,18 @@ def get_microbatch_size():
     global _GLOBAL_ARGS
     return _GLOBAL_ARGS.micro_batch_size
 
+def should_logging(dst_rank):
+    global _GLOBAL_ARGS
+    if not _GLOBAL_ARGS.logging:
+        return False
+    src_rank = get_pipeline_model_parallel_rank()
+    src_node = src_rank // _GLOBAL_ARGS.local_world_size
+    dst_node = dst_rank // _GLOBAL_ARGS.local_world_size
+    if src_node == dst_node:
+        return False
+    return True
+
+
 def forward_step(data_iterator, model, input_tensor, loss_func, loss):
     if is_pipeline_first_stage() or is_pipeline_last_stage():
         data = next(data_iterator)
@@ -66,13 +78,21 @@ def backward_step(input_tensor, output_tensor, output_tensor_grad):
 
     return input_tensor_grad
 
+def logging(tensor):
+    pass
 
 def send_forward(output_tensor):
     if not is_pipeline_last_stage():
+        if should_logging(get_pipeline_model_parallel_next_rank()):
+            logging(output_tensor)
+
         torch.distributed.send(output_tensor, get_pipeline_model_parallel_next_rank())
 
 def send_backward(input_tensor_grad):
     if not is_pipeline_first_stage():
+        if should_logging(get_pipeline_model_parallel_prev_rank()):
+            logging(input_tensor_grad)
+
         torch.distributed.send(input_tensor_grad, get_pipeline_model_parallel_prev_rank())
 
 def recv_forward(shape, dtype=torch.float32):
@@ -92,6 +112,9 @@ def recv_backward(shape, dtype=torch.float32):
 def send_forward_recv_backward(output_tensor, dtype=torch.float32):
     output_tensor_grad = None
     if not is_pipeline_last_stage():
+        if should_logging(get_pipeline_model_parallel_next_rank()):
+            logging(output_tensor)
+
         output_tensor_grad = torch.empty_like(output_tensor, requires_grad=True, device=torch.cuda.current_device(), dtype=dtype)
         send_op = torch.distributed.P2POp(torch.distributed.isend, output_tensor, get_pipeline_model_parallel_next_rank())
         recv_op = torch.distributed.P2POp(torch.distributed.irecv, output_tensor_grad, get_pipeline_model_parallel_next_rank())
@@ -106,6 +129,9 @@ def send_forward_recv_backward(output_tensor, dtype=torch.float32):
 def send_backward_recv_forward(input_tensor_grad, dtype=torch.float32):
     input_tensor = None
     if not is_pipeline_first_stage():
+        if should_logging(get_pipeline_model_parallel_prev_rank()):
+            logging(input_tensor_grad)
+
         input_tensor = torch.empty_like(input_tensor_grad, requires_grad=True, device=torch.cuda.current_device(), dtype=dtype)
         send_op = torch.distributed.P2POp(torch.distributed.isend, input_tensor_grad, get_pipeline_model_parallel_prev_rank())
         recv_op = torch.distributed.P2POp(torch.distributed.irecv, input_tensor, get_pipeline_model_parallel_prev_rank())

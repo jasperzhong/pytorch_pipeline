@@ -44,6 +44,9 @@ parser.add_argument('--micro-batch-size', type=int, default=None,
                     help='Batch size per model instance (local batch size).')
 parser.add_argument('--global-batch-size', type=int,
                     default=256, help='Training batch size.')
+# logging
+parser.add_argument('--logging', action='store_true', default=False,
+                    help='enable update stream logging')
 
 
 def get_data_iterator(args):
@@ -113,6 +116,7 @@ def main():
     args.world_size = int(os.environ['WORLD_SIZE'])
     args.rank = int(os.environ['RANK'])
     args.local_rank = int(os.environ['LOCAL_RANK'])
+    args.local_world_size = int(os.environ['LOCAL_WORLD_SIZE'])
     torch.cuda.set_device(args.local_rank)
     init_method = "tcp://{}:{}".format(args.master_ip, args.master_port)
     torch.distributed.init_process_group(
