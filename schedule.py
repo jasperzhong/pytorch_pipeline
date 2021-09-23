@@ -4,6 +4,7 @@ _GLOBAL_ARGS = None
 logging_buffer = []
 logged_size_in_bytes = 0
 memory_budget = 1 * 1000 * 1000 * 1000
+logging_stream = torch.cuda.Stream()
 
 def initialize_global_args(args):
     global _GLOBAL_ARGS
@@ -85,8 +86,12 @@ def logging(tensor):
     global logging_buffer
     global logged_size_in_bytes
     global memory_budget
+
     tensor_cpu = torch.zeros_like(tensor, device="cpu", pin_memory=True)
-    tensor_cpu.copy_(tensor, non_blocking=True)
+    logging_stream.wait_stream(torch.cuda.current_stream())
+    with torch.cuda.stream(logging_stream):
+        tensor_cpu.copy_(tensor, non_blocking=True)
+
     logging_buffer.append(tensor_cpu)
     logged_size_in_bytes += tensor_cpu.numel() * 4
     if logged_size_in_bytes > memory_budget:
