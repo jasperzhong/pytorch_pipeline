@@ -85,7 +85,7 @@ def logging(tensor):
     global logging_buffer
     global logged_size_in_bytes
     global memory_budget
-    tensor_cpu = torch.zeros_like(tensor, device="cpu")
+    tensor_cpu = torch.zeros_like(tensor, device="cpu", pin_memory=True)
     tensor_cpu.copy_(tensor, non_blocking=True)
     logging_buffer.append(tensor_cpu)
     logged_size_in_bytes += tensor_cpu.numel() * 4
