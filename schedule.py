@@ -87,7 +87,7 @@ def logging(tensor):
     global logged_size_in_bytes
     global memory_budget
 
-    tensor_cpu = torch.zeros_like(tensor, device="cpu", pin_memory=True)
+    tensor_cpu = torch.empty_like(tensor, device="cpu", pin_memory=True)
     logging_stream.wait_stream(torch.cuda.current_stream())
     with torch.cuda.stream(logging_stream):
         tensor_cpu.copy_(tensor, non_blocking=True)
