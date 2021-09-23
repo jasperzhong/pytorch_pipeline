@@ -1,6 +1,7 @@
 import torch
 
 _GLOBAL_ARGS = None
+logging_buffer = []
 
 def initialize_global_args(args):
     global _GLOBAL_ARGS
@@ -79,7 +80,7 @@ def backward_step(input_tensor, output_tensor, output_tensor_grad):
     return input_tensor_grad
 
 def logging(tensor):
-    pass
+    logging_buffer.append(tensor.cpu())
 
 def send_forward(output_tensor):
     if not is_pipeline_last_stage():
