@@ -2,6 +2,8 @@ import torch
 
 _GLOBAL_ARGS = None
 logging_buffer = []
+logged_size_in_bytes = 0
+memory_budget = 1 * 1000 * 1000 * 1000
 
 def initialize_global_args(args):
     global _GLOBAL_ARGS
@@ -80,7 +82,14 @@ def backward_step(input_tensor, output_tensor, output_tensor_grad):
     return input_tensor_grad
 
 def logging(tensor):
-    logging_buffer.append(tensor.cpu())
+    global logging_buffer
+    global logged_size_in_bytes
+    global memory_budget
+    tensor_cpu = tensor.cpu()
+    logging_buffer.append(tensor_cpu)
+    logged_size_in_bytes += tensor_cpu.numel() * 4
+    if logged_size_in_bytes > memory_budget:
+        logging_buffer.clear()
 
 def send_forward(output_tensor):
     if not is_pipeline_last_stage():
