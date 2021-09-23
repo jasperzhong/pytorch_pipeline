@@ -89,7 +89,7 @@ def train(args, data_iterator, model, optimizer, loss_func):
                     ))
                     throughputs.append(throughput)
 
-                if iteration == args.benchmark_iters:
+                if is_pipeline_last_stage() and iteration == args.benchmark_iters:
                     throughputs = np.array(throughputs)
                     print("Avg Throughput per 10 iterations: {:.2f} imgs/s, std: {:.2f} imgs/s".format(
                         np.mean(throughputs), np.std(throughputs)
