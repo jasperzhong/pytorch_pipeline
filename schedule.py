@@ -231,11 +231,11 @@ def pipedream_flush_schedule(data_iterator, model, loss_func):
 
     # run 1F1B steady state
     for i in range(num_microbatches_remaining):
-        first_iteration == (i == 0)
+        first_iteration = (i == 0)
         last_iteration = (i == (num_microbatches_remaining - 1))
         output_tensor = forward_step(
             data_iterator, model, input_tensor, loss_func, loss)
-        
+
         if first_iteration:
             send_forward(output_tensor)
             output_tensor_grad = recv_backward()
