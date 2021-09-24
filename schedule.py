@@ -238,7 +238,7 @@ def pipedream_flush_schedule(data_iterator, model, loss_func):
 
         if first_iteration:
             send_forward(output_tensor)
-            output_tensor_grad = recv_backward()
+            output_tensor_grad = recv_backward(output_tensor.shape)
         else:
             output_tensor_grad = send_forward_recv_backward(output_tensor)
 
